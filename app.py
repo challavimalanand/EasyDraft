@@ -219,8 +219,46 @@ def main():
 
     # -------- GENERATE DOC --------
     if submitted:
-        data = {k: (v or "").strip() for k, v in entries.items()}
-
+        # VALIDATION: Check all fields are filled
+        empty_fields = []
+        data = {}
+        
+        for key, value in entries.items():
+            clean_value = (value or "").strip()
+            data[key] = clean_value
+            
+            # Skip validation for "year" field (auto-filled)
+            if key == "year":
+                continue
+                
+            # Check if field is empty
+            if not clean_value:
+                # Find the field label for better error message
+                field_label = key  # default to key name
+                for field_key, label in mod.FIELDS:
+                    if field_key == key:
+                        field_label = label
+                        break
+                empty_fields.append(field_label)
+        
+        # If any required fields are empty, show error and STOP
+        if empty_fields:
+            st.error("❌ **Please fill all required fields:**")
+            for field in empty_fields:
+                st.write(f"• {field}")
+            st.warning("All fields must be completed before generating document.")
+            
+            # Show the download button as DISABLED
+            st.button(
+                "⬇️ Download Word Document (Disabled - Fill All Fields)",
+                disabled=True,
+                help="Complete all fields to enable download"
+            )
+            
+            # Don't generate document
+            return  # Exit the function early
+        
+        # ✅ ALL FIELDS FILLED - Generate document
         doc = Document(st.session_state.current_template)
         replace_placeholders(doc, data)
 
@@ -237,9 +275,9 @@ def main():
             )
 
         os.unlink(tmp_path)
-        st.success("Document generated successfully.")
+        st.success("✅ Document generated successfully!")
 
-        # STEP D — clear autofill after successful submit
+        # Clear autofill after successful submit
         st.session_state.autofill_mode = False
 
 
