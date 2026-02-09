@@ -1,4 +1,4 @@
 state=telangana
 court_type=high_court
 default_bench=hyderabad
-benches=hyderabad,warangal
+benches=hyderabad

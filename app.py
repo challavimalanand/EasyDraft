@@ -88,7 +88,7 @@ def main():
 
     st.title("⚖️ EasyDraft – Legal Document Generator")
 
-    # -------- SIDEBAR --------
+        # -------- SIDEBAR --------
     with st.sidebar:
         st.header("Court Selection")
 
@@ -112,46 +112,60 @@ def main():
 
         st.markdown("---")
 
-        # NEW: Logout button and user info
+        # Get bench value for button logic
+        current_bench = st.session_state.get("selected_bench", "")
+        
+        # COURT NAME BUTTON - ALWAYS VISIBLE
+        fill_disabled = not current_bench
+        if st.button("🏛️ Fill Court Name", 
+                    disabled=fill_disabled,
+                    use_container_width=True,
+                    help="Select a bench first" if fill_disabled else "Fill court name from selected bench"):
+            if current_bench:  # Double check
+                bench_court_name = get_court_name_for_bench(state, court, current_bench)
+                if bench_court_name:
+                    st.session_state.bench_court_name = bench_court_name
+                    st.session_state.form_version += 1
+                    st.rerun()
+
+        # ACTION BUTTONS
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("🔄 Reset Form", use_container_width=True):
+                # Clear specific form-related states
+                keys_to_clear = [
+                    "autofill_mode", 
+                    "bench_court_name",
+                    "selected_bench",  # Clear this too
+                    "state_sel",
+                    "court_sel", 
+                    "bench_sel",
+                    "case_sel"
+                ]
+                
+                for key in keys_to_clear:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                
+                st.session_state.form_version += 1
+                st.rerun()
+        
+        with col2:
+            if st.button("🧪 Auto Fill", use_container_width=True):
+                st.session_state.autofill_mode = True
+                st.session_state.form_version += 1
+                st.rerun()
+
+        st.markdown("---")
+
+        # USER INFO & LOGOUT - ALWAYS VISIBLE
         st.caption(f"Logged in as: **{st.session_state.username}**")
-        if st.button("🚪 Logout"):
+        
+        if st.button("🚪 Logout", use_container_width=True):
             # Clear all session state
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
-            st.rerun()
-
-        # NEW: Simple button to fill court name
-        if bench and st.button("🏛️ Fill Court Name"):
-            # Just get and store the bench court name
-            bench_court_name = get_court_name_for_bench(state, court, bench)
-            if bench_court_name:
-                st.session_state.bench_court_name = bench_court_name
-                st.session_state.form_version += 1  # 🔥 FORCE UI REFRESH
-                st.rerun()  # Refresh to show the filled field
-
-        
-        # In the sidebar section, modify the reset button:
-        if st.button("🔄 Reset Form"):
-            # COMPLETELY CLEAR ALL SESSION STATE
-            keys_to_clear = [
-                "autofill_mode", 
-                "bench_court_name",
-                "state_sel",
-                "court_sel", 
-                "bench_sel",
-                "case_sel"
-            ]
-            
-            for key in keys_to_clear:
-                if key in st.session_state:
-                    del st.session_state[key]
-            
-            st.session_state.form_version += 1
-            st.rerun()
-        
-        if st.button("🧪 Auto Fill (Test Run)"):
-            st.session_state.autofill_mode = True
-            st.session_state.form_version += 1   # force UI rebuild
             st.rerun()
 
 

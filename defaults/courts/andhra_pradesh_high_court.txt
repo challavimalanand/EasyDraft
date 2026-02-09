@@ -1,7 +1,7 @@
 state=andhra pradesh
 court_type=high_court
 default_bench=amaravati
-benches=amaravati,kurnool
+benches=amaravati
 
 
 
