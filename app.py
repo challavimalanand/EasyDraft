@@ -45,7 +45,7 @@ def login_page():
                 st.error("Invalid username or password")
     
     st.markdown("---")
-    st.caption("Authorized Users Only")
+    st.caption("Developed by Challa Vimalanand, Advocate & Patent Agent")
 
 # ---------------- PATHS ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
