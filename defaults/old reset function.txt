@@ -1,0 +1,22 @@
+if st.button("🔄 Reset Form", use_container_width=True):
+                # Clear specific form-related states
+                keys_to_clear = [
+                    "autofill_mode", 
+                    "bench_court_name",
+                    "dof_value", 
+                    "selected_bench",  # Clear this too
+                    "state_sel",
+                    "court_sel", 
+                    "bench_sel",
+                    "case_sel"
+                ]
+                
+                if "generated_docx" in st.session_state:
+                    del st.session_state.generated_docx
+
+                for key in keys_to_clear:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                
+                st.session_state.form_version += 1
+                st.rerun()

@@ -159,10 +159,7 @@ def main():
                     "bench_court_name",
                     "dof_value", 
                     "selected_bench",  # Clear this too
-                    "state_sel",
-                    "court_sel", 
-                    "bench_sel",
-                    "case_sel"
+                    
                 ]
                 
                 if "generated_docx" in st.session_state:
@@ -248,30 +245,28 @@ def main():
 
         for key, label in mod.FIELDS:
             default = ""
-            
-            # 1. If it's court_name AND we have a bench court name stored, use it
+
+            # 1️⃣ Court name from bench
             if key == "court_name" and st.session_state.get("bench_court_name"):
                 default = st.session_state.bench_court_name
-            
-            # 2. If it's dof AND blank date of filing  stored, use it
-            if key.lower() == "dof" and st.session_state.get("dof_value"):
+
+            # 2️⃣ DOF blank format
+            elif key.lower() == "dof" and st.session_state.get("dof_value"):
                 default = st.session_state.dof_value
-            
-            # 3. If auto-fill mode is ON, fill with test text
+
+            # 3️⃣ Auto fill mode
             elif st.session_state.autofill_mode:
-                default = "This is a test Run"
-                
-                # Except for year field
                 if key == "year":
                     default = str(date.today().year)
-                # And if we also have bench court name, use it for court_name
                 elif key == "court_name" and st.session_state.get("bench_court_name"):
                     default = st.session_state.bench_court_name
-            
-            # 3. Normal/default values
-            else:
-                if key == "year":
-                    default = str(date.today().year)
+                else:
+                    default = "This is a test Run"
+
+            # 4️⃣ Normal default year
+            elif key == "year":
+                default = str(date.today().year)
+
 
             widget_key = f"field_{key}_{st.session_state.form_version}"
 
