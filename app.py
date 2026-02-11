@@ -67,7 +67,11 @@ def init_session():
         "current_template": None,
         "bench_court_name": "",
         "generated_docx": None,
-        "autofill_mode": False
+        "autofill_mode": False,
+        "dof_value": "",
+        "prev_state": "",
+        "prev_court": "",
+        "prev_case": ""
     }
     for k, v in defaults.items():
         st.session_state.setdefault(k, v)
@@ -129,6 +133,12 @@ def main():
                     st.session_state.form_version += 1
                     st.rerun()
 
+        # DOF BUTTON - ALWAYS VISIBLE
+        if st.button("📅 Blank Filing Date", use_container_width=True):
+            st.session_state.dof_value = "__ /__ /20__"
+            st.session_state.form_version += 1
+            st.rerun()
+
         # ACTION BUTTONS
         col1, col2 = st.columns(2)
         
@@ -138,6 +148,7 @@ def main():
                 keys_to_clear = [
                     "autofill_mode", 
                     "bench_court_name",
+                    "dof_value", 
                     "selected_bench",  # Clear this too
                     "state_sel",
                     "court_sel", 
@@ -145,6 +156,9 @@ def main():
                     "case_sel"
                 ]
                 
+                if "generated_docx" in st.session_state:
+                    del st.session_state.generated_docx
+
                 for key in keys_to_clear:
                     if key in st.session_state:
                         del st.session_state[key]
@@ -171,6 +185,32 @@ def main():
 
 
     # -------- FORM LOAD --------
+    # -------- AUTO RESET ON COURT / CASE CHANGE --------
+    if (
+        st.session_state.prev_state != state or
+        st.session_state.prev_court != court or
+        st.session_state.prev_case != case
+    ):
+        # Clear generated document
+        if "generated_docx" in st.session_state:
+            del st.session_state.generated_docx
+
+       # Reset smart-filled values safely
+        st.session_state.autofill_mode = False
+        st.session_state.bench_court_name = ""
+        st.session_state.dof_value = ""
+
+
+        # Update form version (forces UI rebuild)
+        st.session_state.form_version += 1
+
+    # Update previous trackers
+    st.session_state.prev_state = state
+    st.session_state.prev_court = court
+    st.session_state.prev_case = case
+
+
+
     if not (state and court and case):
         st.info("Select State, Court, and Case to continue.")
         return
@@ -199,12 +239,16 @@ def main():
 
         for key, label in mod.FIELDS:
             default = ""
-
+            
             # 1. If it's court_name AND we have a bench court name stored, use it
             if key == "court_name" and st.session_state.get("bench_court_name"):
                 default = st.session_state.bench_court_name
             
-            # 2. If auto-fill mode is ON, fill with test text
+            # 2. If it's dof AND blank date of filing  stored, use it
+            if key.lower() == "dof" and st.session_state.get("dof_value"):
+                default = st.session_state.dof_value
+            
+            # 3. If auto-fill mode is ON, fill with test text
             elif st.session_state.autofill_mode:
                 default = "This is a test Run"
                 
@@ -232,6 +276,7 @@ def main():
 
         submitted = st.form_submit_button("📄 Generate Document", type="primary")
 
+    
     # -------- GENERATE DOC --------
     if submitted:
         empty_fields = []
@@ -268,15 +313,18 @@ def main():
         st.success("✅ Document generated successfully!")
         st.session_state.autofill_mode = False
 
-if st.session_state.get("generated_docx"):
-    st.download_button(
-        label="⬇️ Download Word Document",
-        data=st.session_state.generated_docx,
-        file_name=f"{st.session_state.get('selected_case', 'draft')}_{date.today().strftime('%Y%m%d')}.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    )
+        st.rerun()    # 🔥 THIS FIXES THE DOUBLE CLICK ISSUE
 
-
+        
+    # 👇 MOVE DOWNLOAD BUTTON HERE 👇
+    if st.session_state.get("generated_docx"):
+        st.success("✅ Document generated successfully!")
+        st.download_button(
+            label="⬇️ Download Word Document",
+            data=st.session_state.generated_docx,
+            file_name=f"{st.session_state.get('selected_case', 'draft')}_{date.today().strftime('%Y%m%d')}.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
 
 
 
