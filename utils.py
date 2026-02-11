@@ -17,37 +17,49 @@ def load_python_module(path):
 
 # ---------------- PLACEHOLDER REPLACER ----------------
 def replace_placeholders(doc, data):
-    def replace_in_paragraph(paragraph):
-        if not paragraph.runs:
+    placeholders = {f"{{{{{k}}}}}": v for k, v in data.items()}
+
+    def process_paragraph(paragraph):
+        runs = paragraph.runs
+        if not runs:
             return
 
-        full_text = "".join(run.text for run in paragraph.runs)
-        new_text = full_text
+        # Build full text with run boundaries preserved
+        run_texts = [run.text for run in runs]
+        full_text = "".join(run_texts)
 
-        for k, v in data.items():
-            new_text = new_text.replace(f"{{{{{k}}}}}", v)
+        replaced = full_text
+        for ph, val in placeholders.items():
+            replaced = replaced.replace(ph, val)
 
-        # No change → do nothing
-        if new_text == full_text:
-            return
+        if replaced == full_text:
+            return  # nothing to do
 
-        # Clear run texts ONLY (not runs themselves)
-        for run in paragraph.runs:
-            run.text = ""
+        # Now re-distribute text BACK into existing runs
+        idx = 0
+        for run, original_text in zip(runs, run_texts):
+            length = len(original_text)
+            if length == 0:
+                continue
 
-        # Put replaced text into the FIRST run
-        paragraph.runs[0].text = new_text
+            run.text = replaced[idx:idx + length]
+            idx += length
+
+        # If replacement text is longer, append safely
+        if idx < len(replaced):
+            runs[-1].text += replaced[idx:]
 
     # Normal paragraphs
     for p in doc.paragraphs:
-        replace_in_paragraph(p)
+        process_paragraph(p)
 
     # Tables
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
                 for p in cell.paragraphs:
-                    replace_in_paragraph(p)
+                    process_paragraph(p)
+
 
 
 # ---------------- LOADERS ----------------
